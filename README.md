@@ -110,3 +110,9 @@ Each tool can be linked from this central repository, or optionally bundled toge
 * Stats dashboard (success, bounce, open rate)
 * DKIM/SPF validation helper
 
+
+For comprehensive installation instructions, configuration details, and various use cases, please visit the full guide:
+
+👉 Email Marketing Platforms – Self-Hosted 
+https://www.webdeveloper.today/2025/05/email-marketing-platforms-self-hosted.html
+
