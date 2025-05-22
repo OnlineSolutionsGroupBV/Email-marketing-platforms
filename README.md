@@ -225,8 +225,16 @@ EmailLog.objects.filter(status='bounced', bounce_type='hard')
 - ✅ Designed for **Django 1.11 LTS**
 
   
+
+
+## 💬 Support
+
+For questions, bug reports, or feature requests, please open an issue on GitHub.
+
+For commercial support or custom integration, contact us at: 
+https://www.webdeveloper.today/p/about-web-developer-today.html 
+
 Blog post
 https://www.webdeveloper.today/2025/05/new-open-source-django-app-maillogger.html 
-
   
 
