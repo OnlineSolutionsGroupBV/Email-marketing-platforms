@@ -17,8 +17,8 @@ class EmailLog(models.Model):
         super(EmailLog, self).save(*args, **kwargs)
 
     def classify_bounce(self):
-        if self.status == 'bounced':
-            if re.search(r"user unknown|mailbox not found|no such user|mailbox full|does not exist|No such mailbox|No such recipient here|Name service error|no mailbox|mailbox is disabled|Mailbox is full|Quota exceeded|Mailbox might be disabled|No such domain|Unknown recipient|Recipient Unknown|curently over quota", self.reason or '', re.IGNORECASE):
+        if self.status == 'bounced' :
+            if re.search(r"user unknown|mailbox not found|no such user|mailbox full|does not exist|No such mailbox|No such recipient here|Name service error|no mailbox|mailbox is disabled|Mailbox is full|Quota exceeded|Mailbox might be disabled|No such domain|Unknown recipient|Recipient Unknown|curently over quota|no mail-enabled subscriptions", self.reason or '', re.IGNORECASE):
                 return 'hard'
             else:
                 return 'soft'
@@ -26,4 +26,15 @@ class EmailLog(models.Model):
 
     def __unicode__(self):
         return u"%s - %s" % (self.recipient, self.status)
+
+
+class SuppressedEmail(models.Model):
+    recipient = models.EmailField(unique=True)
+    reason = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, default='pending')  # pending, done, exported
+    added_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __unicode__(self):
+        return self.recipient
+
 
