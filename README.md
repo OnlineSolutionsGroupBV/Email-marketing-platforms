@@ -116,3 +116,125 @@ For comprehensive installation instructions, configuration details, and various 
 👉 Email Marketing Platforms – Self-Hosted 
 https://www.webdeveloper.today/2025/05/email-marketing-platforms-self-hosted.html
 
+# 📬 maillogger
+
+A simple Django app for parsing Postfix mail logs and storing email delivery statuses for analytics, reporting, and automated unsubscribe workflows.
+
+---
+
+## ✅ Features
+
+- Parses `/var/log/mail.log` and rotated `.gz` files
+- Stores each email delivery event:
+  - Sender and recipient
+  - Delivery status (`sent`, `bounced`, etc.)
+  - Bounce reason (e.g. "user unknown", "mailbox full")
+  - Bounce type (`hard`, `soft`, or null)
+- Bounce classification can be automatic or manual
+- Ready for filtering, analytics, or unsubscribe automation
+
+---
+
+## 📦 Installation
+
+1. Add the app to your Django project:
+
+   ```bash
+   python manage.py startapp maillogger
+   ```
+
+2. Add it to your `INSTALLED_APPS` in `settings.py`:
+
+   ```python
+   INSTALLED_APPS = [
+       ...
+       'maillogger',
+   ]
+   ```
+
+3. Apply migrations:
+
+   ```bash
+   python manage.py makemigrations maillogger
+   python manage.py migrate
+   ```
+
+---
+
+## 🛠 Management Commands
+
+### 🔹 `parse_maillogs`
+
+Parses mail logs (including `.gz` files) and stores delivery events in the `EmailLog` model.
+
+```bash
+python manage.py parse_maillogs
+```
+
+> ✅ Supports automatic decoding and fallback for compressed logs.
+
+---
+
+### 🔹 `classify_bounces`
+
+Classifies previously parsed bounce records into `hard` or `soft` types based on the bounce reason.
+
+```bash
+python manage.py classify_bounces
+```
+
+> Recommended to run after `parse_maillogs` if you want to separate bounce classification logic.
+
+---
+
+## 🧠 Model: `EmailLog`
+
+| Field         | Description                          |
+|---------------|--------------------------------------|
+| `recipient`   | Email address receiving the message  |
+| `sender`      | Email address sending the message    |
+| `status`      | Email status (`sent`, `bounced`, etc.) |
+| `reason`      | Text reason from the mail log        |
+| `bounce_type` | `hard`, `soft`, or `null`            |
+| `message_id`  | Mail message ID                      |
+| `logged_at`   | When the log was saved               |
+
+---
+
+## 🔍 Example Usage
+
+Filter for all hard bounces:
+
+```python
+EmailLog.objects.filter(status='bounced', bounce_type='hard')
+```
+
+---
+
+## 📈 Coming Soon
+
+- Unsubscribe automation via API
+- Bounce analytics dashboard
+- Domain-based performance stats
+
+---
+
+## ⚠️ Python & Django Compatibility
+
+- ✅ Compatible with **Python 2.7**
+- ✅ Designed for **Django 1.11 LTS**
+
+  
+
+
+## 💬 Support
+
+For questions, bug reports, or feature requests, please open an issue on GitHub.
+
+For commercial support or custom integration, contact us at: 
+https://www.webdeveloper.today/p/about-web-developer-today.html 
+
+Blog post
+https://www.webdeveloper.today/2025/05/new-open-source-django-app-maillogger.html 
+  
+
