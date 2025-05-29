@@ -12,17 +12,29 @@ class EmailLog(models.Model):
     logged_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        if self.status == 'bounced' and not self.bounce_type:
+        if self.status in ['bounced', 'deferred'] and not self.bounce_type:
             self.bounce_type = self.classify_bounce()
+            # If it is deferred, but it turns out to be a hard bounce:
+            if self.status == 'deferred' and self.bounce_type == 'hard':
+                self.status = 'bounced' 
         super(EmailLog, self).save(*args, **kwargs)
 
+
     def classify_bounce(self):
-        if self.status == 'bounced' :
-            if re.search(r"user unknown|mailbox not found|no such user|mailbox full|does not exist|No such mailbox|No such recipient here|Name service error|no mailbox|mailbox is disabled|Mailbox is full|Quota exceeded|Mailbox might be disabled|No such domain|Unknown recipient|Recipient Unknown|curently over quota|no mail-enabled subscriptions", self.reason or '', re.IGNORECASE):
-                return 'hard'
-            else:
-                return 'soft'
-        return None
+        hard_bounce_patterns = (
+            r"user unknown|mailbox not found|no such user|"
+            r"mailbox full|does not exist|no such mailbox|OverQuotaTemp|unable to verify user|"
+            r"no such recipient here|name service error|Host not found|"
+            r"no mailbox|mailbox is disabled|quota exceeded|"
+            r"mailbox might be disabled|no such domain|"
+            r"unknown recipient|recipient unknown|currently over quota|"
+            r"no mail-enabled subscriptions|out of storage|over quota"
+        )
+
+        if re.search(hard_bounce_patterns, self.reason or '', re.IGNORECASE):
+            return 'hard'
+        return 'soft'
+
 
     def __unicode__(self):
         return u"%s - %s" % (self.recipient, self.status)
