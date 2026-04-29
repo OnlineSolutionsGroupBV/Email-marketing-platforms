@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from maillogger.models import EmailLog
+from maillogger.notifier import notify_contact_status
+from maillogger.provider_utils import detect_provider
 import re
 import codecs
 import gzip
@@ -8,12 +10,16 @@ import gzip
 class Command(BaseCommand):
     help = 'Parses Postfix mail logs and saves delivery status'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--notify-contact', action='store_true', dest='notify_contact', default=False)
+        parser.add_argument('--mx', action='store_true', dest='use_mx', default=False)
+
     def handle(self, *args, **options):
         # ls /var/log/mail.*
         # /var/log/mail.err  /var/log/mail.log.1     /var/log/mail.log.3.gz  /var/log/mail.summ
         # /var/log/mail.log  /var/log/mail.log.2.gz  /var/log/mail.log.4.gz
 
-        log_files = ["/var/log/mail.log.2.gz", "/var/log/mail.log.3.gz", "/var/log/mail.log.4.gz"]  # Add more if needed 
+        log_files = ["/var/log/mail.log.2.gz", "/var/log/mail.log.3.gz", "/var/log/mail.log.4.gz"]  # Add more if needed
         # "/var/log/mail.log", "/var/log/mail.log.1"
 
         to_line_regex = re.compile(r'to=<([^>]+)>')
@@ -28,9 +34,11 @@ class Command(BaseCommand):
                     opener = lambda p: gzip.open(p, 'rb')
                 else:
                     opener = lambda p: codecs.open(p, 'r', encoding='utf-8', errors='ignore')
-                print("Starting: " + log_path)                
+                print("Starting: " + log_path)
                 with opener(log_path) as log_file:
                     for line in log_file:
+                        if not isinstance(line, str):
+                            line = line.decode('utf-8', 'ignore')
                         if "status=" not in line or "to=<" not in line:
                             continue
 
@@ -40,14 +48,20 @@ class Command(BaseCommand):
                         msg_id_match = msg_id_regex.search(line)
 
                         if recipient_match and status_match:
-                            EmailLog.objects.create(
+                            provider, domain, mx_domain = detect_provider(recipient_match.group(1), use_mx=options['use_mx'])
+                            email_log = EmailLog.objects.create(
                                 recipient=recipient_match.group(1),
                                 sender=sender_match.group(1) if sender_match else None,
                                 status=status_match.group(1).lower(),
                                 reason=(status_match.group(2) or '').strip(),
-                                message_id=msg_id_match.group(1) if msg_id_match else None
+                                message_id=msg_id_match.group(1) if msg_id_match else None,
+                                recipient_domain=domain,
+                                provider=provider,
+                                mx_domain=mx_domain,
+                                raw_line=line,
                             )
+                            if options['notify_contact']:
+                                notify_contact_status(email_log)
                 self.stdout.write("Parsed: %s" % log_path)
             except IOError:
                 self.stderr.write("Log file not found: %s" % log_path)
-

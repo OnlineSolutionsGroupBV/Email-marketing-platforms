@@ -8,6 +8,8 @@ class EmailMessage(models.Model):
     text_body = models.TextField(blank=True, null=True)
     html_body = models.TextField(blank=True, null=True)
     unsubscribe_url = models.URLField(blank=True, null=True)
+    unsubscribe_email = models.EmailField(blank=True, null=True)
+    one_click_unsubscribe_url = models.URLField(blank=True, null=True)
 
     STATUS_CHOICES = (
         ('queued', 'Queued'),
@@ -23,4 +25,3 @@ class EmailMessage(models.Model):
 
     def __unicode__(self):
         return u"%s -> %s (%s)" % (self.from_email, self.to_email, self.status)
-

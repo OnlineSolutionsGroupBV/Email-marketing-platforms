@@ -64,7 +64,9 @@ POST /api/send-email/
   "subject": "Welcome!",
   "text_body": "Hello user, welcome to our service.",
   "html_body": "<p>Hello <strong>user</strong>, welcome to our service.</p>",
-  "unsubscribe_url": "https://example.com/unsubscribe?id=123"
+  "unsubscribe_url": "https://example.com/unsubscribe?id=123",
+  "unsubscribe_email": "contact@example.com",
+  "one_click_unsubscribe_url": "https://example.com/unsubscribe/one-click?id=123"
 }
 ```
 
@@ -75,6 +77,54 @@ POST /api/send-email/
   "status": "sent",
   "id": 10123
 }
+```
+
+---
+
+### One-click unsubscribe headers
+
+When `one_click_unsubscribe_url` is present, Webmailer adds RFC 8058 one-click headers:
+
+```text
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+List-Unsubscribe: <mailto:contact@example.com>, <https://example.com/unsubscribe/one-click?id=123>
+```
+
+`unsubscribe_url` can still point to a human unsubscribe page shown in the message body.
+
+### Contact status notification
+
+`maillogger` can notify an external contact system after parsing Postfix logs.
+
+Settings:
+
+```python
+CONTACT_STATUS_UPDATE_ENABLED = True
+CONTACT_STATUS_UPDATE_URL = "https://sendgrid.auto-tweedehands.com/contact/api/email-status/"
+CONTACT_PROVIDER_UPDATE_KEY = "change-me"
+CONTACT_STATUS_UPDATE_TIMEOUT = 10
+```
+
+Parse logs, classify recipient providers by domain/MX, and notify the external contact endpoint:
+
+```bash
+python manage.py parse_maillogs --mx --notify-contact
+```
+
+External parsers can also POST delivery status into maillogger:
+
+```python
+EMAIL_LOG_INGEST_KEY = "change-me"
+```
+
+```bash
+curl -X POST https://mailer.example.com/api/email-log/ \
+  -H "X-Email-Log-Key: change-me" \
+  -d "email=user@example.com" \
+  -d "status=bounced" \
+  -d "reason=User unknown" \
+  -d "bounce_type=hard" \
+  -d "notify_contact=true"
 ```
 
 ---
@@ -237,4 +287,3 @@ https://www.webdeveloper.today/p/about-web-developer-today.html
 Blog post
 https://www.webdeveloper.today/2025/05/new-open-source-django-app-maillogger.html 
   
-

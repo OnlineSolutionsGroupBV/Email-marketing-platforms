@@ -45,6 +45,8 @@ def send_email_api(request):
         text_body=cleaned.get('text_body'),
         html_body=cleaned.get('html_body'),
         unsubscribe_url=cleaned.get('unsubscribe_url'),
+        unsubscribe_email=cleaned.get('unsubscribe_email'),
+        one_click_unsubscribe_url=cleaned.get('one_click_unsubscribe_url'),
         status='queued',
     )
 
@@ -58,12 +60,18 @@ def send_email_api(request):
         if email.html_body:
             msg.attach_alternative(email.html_body, "text/html")
 
-        # List-Unsubscribe
-        if email.unsubscribe_url:
+        headers = {}
+        if email.one_click_unsubscribe_url:
+            headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+            unsubscribe = "<%s>" % email.one_click_unsubscribe_url
+            if email.unsubscribe_email:
+                unsubscribe = "<mailto:%s>, %s" % (email.unsubscribe_email, unsubscribe)
+        elif email.unsubscribe_url:
             unsubscribe = "<%s>" % email.unsubscribe_url
         else:
-            unsubscribe = "<mailto:%s>" % email.from_email
-        msg.extra_headers = {'List-Unsubscribe': unsubscribe}
+            unsubscribe = "<mailto:%s>" % (email.unsubscribe_email or email.from_email)
+        headers['List-Unsubscribe'] = unsubscribe
+        msg.extra_headers = headers
 
         msg.send()
         email.status = 'sent'
@@ -74,4 +82,3 @@ def send_email_api(request):
     email.save()
 
     return JsonResponse({'status': email.status, 'id': email.id})
-

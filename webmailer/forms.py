@@ -8,10 +8,11 @@ class EmailForm(forms.Form):
     text_body = forms.CharField(required=False)
     html_body = forms.CharField(required=False)
     unsubscribe_url = forms.URLField(required=False)
+    unsubscribe_email = forms.EmailField(required=False)
+    one_click_unsubscribe_url = forms.URLField(required=False)
 
     def clean(self):
         data = self.cleaned_data
         if not data.get('text_body') and not data.get('html_body'):
             raise forms.ValidationError("Either text_body or html_body must be provided.")
         return data
-
