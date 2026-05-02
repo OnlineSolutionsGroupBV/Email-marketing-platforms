@@ -92,6 +92,58 @@ List-Unsubscribe: <mailto:contact@example.com>, <https://example.com/unsubscribe
 
 `unsubscribe_url` can still point to a human unsubscribe page shown in the message body.
 
+### Configuratievariabelen
+
+Deze public repo bevat geen `settings.py` met productiegegevens. Maak op elke server een lokale settings file of gebruik environment variables. Commit nooit echte secrets, API keys, database wachtwoorden of domeinspecifieke productieconfiguratie.
+
+Minimale Django/webmailer configuratie:
+
+```python
+SECRET_KEY = "change-me-local-secret"
+DEBUG = False
+ALLOWED_HOSTS = ["mailer.example.com"]
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "email_marketing",
+        "USER": "email_marketing",
+        "PASSWORD": "change-me",
+        "HOST": "localhost",
+        "PORT": "5432",
+    }
+}
+
+EMAIL_HOST = "localhost"
+EMAIL_PORT = 25
+DEFAULT_FROM_EMAIL = "noreply@example.com"
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+```
+
+Contact status synchronisatie naar een externe Contact database:
+
+```python
+CONTACT_STATUS_UPDATE_ENABLED = True
+CONTACT_STATUS_UPDATE_URL = "https://sendgrid.auto-tweedehands.com/contact/api/email-status/"
+CONTACT_PROVIDER_UPDATE_KEY = "change-me-long-random-key"
+CONTACT_STATUS_UPDATE_TIMEOUT = 10
+```
+
+Externe status ingest API voor scripts of andere mailservers:
+
+```python
+EMAIL_LOG_INGEST_KEY = "change-me-long-random-key"
+```
+
+Aanbevolen productie-aanpak:
+
+- bewaar secrets in environment variables of een niet-gecommitte lokale settings file;
+- zet `DEBUG = False`;
+- beperk `ALLOWED_HOSTS`;
+- gebruik aparte keys voor `CONTACT_PROVIDER_UPDATE_KEY` en `EMAIL_LOG_INGEST_KEY`;
+- roteer keys direct als ze ooit in git, logs of chat terechtkomen;
+- houd mailserverconfiguratie zoals DKIM private keys buiten deze repo.
+
 ### Contact status notification
 
 `maillogger` can notify an external contact system after parsing Postfix logs.
