@@ -11,10 +11,14 @@ class Command(BaseCommand):
 
         payload = {
             "client_id": "test-http-command",
-            "from_email": "info@auto-tweedehands.com",
+            "from_email": "contact@autoverkopen.email",
             "to_email": "test-9op06vehp@srv1.mail-tester.com",  # vervang met geldig testadres
-            "subject": "Test Email from HTTP Command",
-            "text_body": "Hello, this is a test email sent via HTTP POST from testmail command."
+            "subject": "UTF-8 DKIM test via webmailer",
+            "text_body": "UTF-8 test: humanité, foto's, tweedehands bedrijfswagens.\nAfmelden: https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/one-click/?id=test",
+            "html_body": "<p>UTF-8 test: humanité, foto's, tweedehands bedrijfswagens.</p><p>Afmelden: <a href=\"https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/one-click/?id=test\">uitschrijven</a></p>",
+            "unsubscribe_email": "contact@autoverkopen.email",
+            "unsubscribe_url": "https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/autoverkopen-email/?id=test",
+            "one_click_unsubscribe_url": "https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/one-click/?id=test"
         }
 
         headers = {
@@ -29,4 +33,3 @@ class Command(BaseCommand):
                 self.stderr.write(('Failed with status %s: %s' % (response.status_code, response.text)))
         except Exception as e:
             self.stderr.write(('Request error: %s' % e))
-

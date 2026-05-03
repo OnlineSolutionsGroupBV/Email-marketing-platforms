@@ -6,6 +6,7 @@ from django.utils import timezone
 from .models import EmailMessage
 from .forms import EmailForm
 from django.core.mail import EmailMultiAlternatives
+from email import encoders
 import json
 
 
@@ -14,6 +15,42 @@ def get_client_ip(request):
     if x_forwarded_for:
         return x_forwarded_for.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR')
+
+
+def force_content_transfer_encoding(message, encoding):
+    if not encoding or encoding == 'none':
+        return message
+
+    encoding = encoding.lower()
+    if encoding not in ('quoted-printable', 'base64'):
+        encoding = 'quoted-printable'
+
+    for part in message.walk():
+        if part.is_multipart():
+            continue
+        if part.get_content_maintype() != 'text':
+            continue
+
+        payload = part.get_payload(decode=True)
+        if payload is None:
+            continue
+        part.set_payload(payload)
+        if part['Content-Transfer-Encoding']:
+            del part['Content-Transfer-Encoding']
+
+        if encoding == 'base64':
+            encoders.encode_base64(part)
+        else:
+            encoders.encode_quopri(part)
+
+    return message
+
+
+class StableEncodingEmailMultiAlternatives(EmailMultiAlternatives):
+    def message(self):
+        message = super(StableEncodingEmailMultiAlternatives, self).message()
+        encoding = getattr(settings, 'WEBMAILER_CONTENT_TRANSFER_ENCODING', 'quoted-printable')
+        return force_content_transfer_encoding(message, encoding)
 
 
 @csrf_exempt
@@ -51,7 +88,7 @@ def send_email_api(request):
     )
 
     try:
-        msg = EmailMultiAlternatives(
+        msg = StableEncodingEmailMultiAlternatives(
             subject=email.subject,
             body=email.text_body or '',
             from_email=email.from_email,

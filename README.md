@@ -118,7 +118,12 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 25
 DEFAULT_FROM_EMAIL = "noreply@example.com"
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+WEBMAILER_CONTENT_TRANSFER_ENCODING = "quoted-printable"
 ```
+
+`WEBMAILER_CONTENT_TRANSFER_ENCODING` controls MIME body encoding for text/plain and text/html parts before SMTP handoff.
+Recommended value is `"quoted-printable"` for UTF-8 mail because it keeps message bodies readable while avoiding unstable `8bit` transport bodies that can break DKIM body hash validation if a downstream server rewrites or wraps content.
+Use `"base64"` if you prefer maximum transport stability over readable raw source, or `"none"` to keep Django's default behavior.
 
 Contact status synchronisatie naar een externe Contact database:
 
