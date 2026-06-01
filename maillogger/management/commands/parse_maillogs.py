@@ -19,7 +19,7 @@ class Command(BaseCommand):
         # /var/log/mail.err  /var/log/mail.log.1     /var/log/mail.log.3.gz  /var/log/mail.summ
         # /var/log/mail.log  /var/log/mail.log.2.gz  /var/log/mail.log.4.gz
 
-        log_files = ["/var/log/mail.log.2.gz", "/var/log/mail.log.3.gz", "/var/log/mail.log.4.gz"]  # Add more if needed
+        log_files = [ "/var/log/mail.log", "/var/log/mail.log.1", "/var/log/mail.log.2.gz", "/var/log/mail.log.3.gz", "/var/log/mail.log.4.gz"]  # Add more if needed
         # "/var/log/mail.log", "/var/log/mail.log.1"
 
         to_line_regex = re.compile(r'to=<([^>]+)>')
