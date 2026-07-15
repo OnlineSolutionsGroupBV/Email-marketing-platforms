@@ -37,7 +37,11 @@ class EmailLog(models.Model):
             r"no mailbox|mailbox is disabled|quota exceeded|"
             r"mailbox might be disabled|no such domain|"
             r"unknown recipient|recipient unknown|currently over quota|"
-            r"no mail-enabled subscriptions|out of storage|over quota"
+            r"no mail-enabled subscriptions?|"
+            r"hosted tenant which has no mail-enabled subscriptions?|"
+            r"connect to [^:]+(?:\[[^\]]+\])?:25: connection timed out|"
+            r"connect to [^:]+(?:\[[^\]]+\])?:25: connection refused|"
+            r"out of storage|over quota"
         )
 
         if re.search(hard_bounce_patterns, self.reason or '', re.IGNORECASE):
@@ -57,4 +61,3 @@ class SuppressedEmail(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     def __unicode__(self):
         return self.recipient
-

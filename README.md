@@ -294,6 +294,44 @@ python manage.py classify_bounces
 
 ---
 
+### 🔹 Postfix log feedback naar Contact API
+
+Gebruik deze volgorde op de mail/webmailer server om Postfix logs naar de
+centrale Contact status API te sturen:
+
+```bash
+python manage.py parse_maillogs --mx
+python manage.py classify_bounces
+python manage.py notify_bounced_contacts --status bounced --bounce-type hard --limit 100 --dry-run
+python manage.py notify_bounced_contacts --status bounced --bounce-type hard --limit 100
+```
+
+Als URL/key niet in lokale settings of environment staan:
+
+```bash
+python manage.py notify_bounced_contacts \
+  --url https://CONTACT-SERVER/contact/api/email-status/ \
+  --key CONTACT_PROVIDER_UPDATE_KEY \
+  --status bounced \
+  --bounce-type hard \
+  --limit 100
+```
+
+Huidige hard-bounce classificatie dekt al:
+
+- `user_unknown`: user unknown, mailbox not found, no such user, recipient unknown
+- `mailbox_full_quota`: mailbox full, over quota, quota exceeded, out of storage
+- domain hard failures: Host not found, name service error, no such domain
+- Microsoft hosted tenant zonder mailbox-subscription:
+  `Mail received as unauthenticated ... hosted tenant which has no mail-enabled subscriptions`
+- terugkerende Postfix connect failures op SMTP poort 25:
+  `connect to ...:25: Connection timed out` en `connect to ...:25: Connection refused`
+
+Algemene technische/reputatieproblemen zoals DNS soft error, message expired en
+5.7 policy/reputation blocks worden niet blind hard bounce gemaakt.
+
+---
+
 ## 🧠 Model: `EmailLog`
 
 | Field         | Description                          |
