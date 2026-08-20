@@ -25,6 +25,39 @@ It allows client applications to send transactional or marketing emails via a cl
 - API-driven email sending for SaaS products  
 - Lightweight alternative to commercial SMTP APIs
 
+## Operations documentation and agent skill
+
+- [Apache and mod_wsgi deployment](docs/APACHE_MOD_WSGI_DEPLOYMENT.md)
+- [Delivery testing and gradual warmup](docs/TESTING_AND_WARMUP.md)
+- [Agent workflow skill](skills/operate-webmailer-delivery/SKILL.md)
+- [Repository agent instructions](AGENTS.md)
+
+The skill is project-local and travels with this Git repository. After these
+files are committed and pushed, install the same version on both servers with
+a normal fast-forward pull.
+
+Legacy server:
+
+```bash
+cd /home/eecho/impexcompany/autoverkopenshop/Email-marketing-platforms
+git status --short
+git pull --ff-only
+test -f skills/operate-webmailer-delivery/SKILL.md
+```
+
+New server:
+
+```bash
+cd /home/admin/Email-marketing-platforms
+git status --short
+git pull --ff-only
+test -f skills/operate-webmailer-delivery/SKILL.md
+```
+
+Do not overwrite either server's local `config/settings.py`. An agent working
+in this repository must read `AGENTS.md`; for deployment, testing, or warmup it
+must then follow `skills/operate-webmailer-delivery/SKILL.md`.
+
 ## 📄 Webmailer – Self-Hosted HTTP-to-SMTP Email API
 
 **Webmailer** is a lightweight, open-source Django-based HTTP-to-SMTP email microservice designed to offer a simple and flexible alternative to providers like SendGrid or Mailgun — but fully hostable on your own infrastructure.
@@ -143,6 +176,17 @@ DEBUG = False
 ALLOWED_HOSTS = ["mailer.example.com", "192.0.2.10"]
 WEBMAILER_PUBLIC_SITE_URL = "https://www.example.com/"
 
+ALLOWED_SENDER_IPS = ["127.0.0.1", "192.0.2.20"]
+
+WEBMAILER_TEST_API_URL = "http://mailer.example.com/api/send-email/"
+WEBMAILER_TEST_FROM_EMAIL = "sender@example.com"
+WEBMAILER_TEST_TO_EMAIL = "owned-test-address@example.net"
+WEBMAILER_TEST_UNSUBSCRIBE_EMAIL = "contact@example.com"
+WEBMAILER_TEST_UNSUBSCRIBE_URL = "https://www.example.com/unsubscribe/test"
+WEBMAILER_TEST_ONE_CLICK_UNSUBSCRIBE_URL = "https://www.example.com/unsubscribe/one-click/test"
+WEBMAILER_TEST_SUBJECT = "UTF-8 DKIM test via webmailer"
+WEBMAILER_TEST_TIMEOUT = 30
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
@@ -169,6 +213,23 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 verzamelt. Apache moet met `Alias /static/` exact naar deze directory wijzen.
 Deze waarden horen in de lokale, niet-gecommitte `config/settings.py`; de
 README bewaart alleen het configuratievoorbeeld en geen actieve serverwaarde.
+
+De testmailcommand leest alle adressen en URL's uit dezelfde lokale settings:
+
+```bash
+python manage.py testmail
+```
+
+Er staan daardoor geen productie-, testontvanger- of uitschrijfdomeinen in de
+commandcode. De command stopt met `CommandError` als verplichte testsettings
+ontbreken, de response geen JSON is, HTTP niet 200 is of de JSON-status niet
+exact `sent` is.
+
+`POST /api/send-email/` gebruikt momenteel geen aparte API-key. Toegang wordt
+beperkt met `ALLOWED_SENDER_IPS`. Het bron-IP van de machine die
+`python manage.py testmail` uitvoert moet dus in die lijst staan. Houd het
+endpoint achter de bestaande firewall/IP-beperking en voeg geen brede publieke
+IP-range toe om een test werkend te krijgen.
 
 `WEBMAILER_CONTENT_TRANSFER_ENCODING` controls MIME body encoding for text/plain and text/html parts before SMTP handoff.
 Recommended value is `"quoted-printable"` for UTF-8 mail because it keeps message bodies readable while avoiding unstable `8bit` transport bodies that can break DKIM body hash validation if a downstream server rewrites or wraps content.
@@ -416,7 +477,9 @@ EmailLog.objects.filter(status='bounced', bounce_type='hard')
 ## ⚠️ Python & Django Compatibility
 
 - ✅ Compatible with **Python 2.7**
-- ✅ Designed for **Django 1.11 LTS**
+- ✅ Maintains compatibility with the deployed legacy Django runtime
+- Verify the exact Django version on each server before changing middleware or
+  dependencies; do not upgrade a shared legacy virtualenv incidentally.
 
   
 

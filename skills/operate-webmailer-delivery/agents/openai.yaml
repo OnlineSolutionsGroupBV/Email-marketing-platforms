@@ -1,0 +1,4 @@
+interface:
+  display_name: "Operate Webmailer Delivery"
+  short_description: "Deploy, test, and warm up the webmailer"
+  default_prompt: "Use $operate-webmailer-delivery to deploy or verify this webmailer safely."

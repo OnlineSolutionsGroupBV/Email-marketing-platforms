@@ -1,28 +1,51 @@
 # -*- coding: utf-8 -*-
 import json
 import requests
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
     help = 'Send a test email via HTTP to the local /api/send-email/ endpoint.'
 
     def handle(self, *args, **options):
-        url = 'http://webmailer.auto-tweedehands.com/api/send-email/'  # lokaal endpoint
+        required_settings = (
+            'WEBMAILER_TEST_API_URL',
+            'WEBMAILER_TEST_TO_EMAIL',
+            'WEBMAILER_TEST_UNSUBSCRIBE_URL',
+            'WEBMAILER_TEST_ONE_CLICK_UNSUBSCRIBE_URL',
+        )
+        missing = [name for name in required_settings if not getattr(settings, name, None)]
+        if missing:
+            raise CommandError(
+                'Missing required setting(s): %s' % ', '.join(missing)
+            )
 
-        text_body = u"UTF-8 test: humanit\u00e9, foto's, tweedehands bedrijfswagens.\nAfmelden: https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/one-click/?id=test"
-        html_body = u"<p>UTF-8 test: humanit\u00e9, foto's, tweedehands bedrijfswagens.</p><p>Afmelden: <a href=\"https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/one-click/?id=test\">uitschrijven</a></p>"
+        url = settings.WEBMAILER_TEST_API_URL
+        from_email = getattr(settings, 'WEBMAILER_TEST_FROM_EMAIL', settings.DEFAULT_FROM_EMAIL)
+        unsubscribe_email = getattr(settings, 'WEBMAILER_TEST_UNSUBSCRIBE_EMAIL', from_email)
+        unsubscribe_url = settings.WEBMAILER_TEST_UNSUBSCRIBE_URL
+        one_click_url = settings.WEBMAILER_TEST_ONE_CLICK_UNSUBSCRIBE_URL
+
+        text_body = (
+            u"UTF-8 test: humanit\u00e9, foto's, tweedehands bedrijfswagens.\n"
+            u"Afmelden: %s" % unsubscribe_url
+        )
+        html_body = (
+            u"<p>UTF-8 test: humanit\u00e9, foto's, tweedehands bedrijfswagens.</p>"
+            u"<p>Afmelden: <a href=\"%s\">uitschrijven</a></p>" % unsubscribe_url
+        )
 
         payload = {
             "client_id": "test-http-command",
-            "from_email": "contact@autoverkopen.email",
-            "to_email": "test-9op06vehp@srv1.mail-tester.com",  # vervang met geldig testadres
-            "subject": "UTF-8 DKIM test via webmailer",
+            "from_email": from_email,
+            "to_email": settings.WEBMAILER_TEST_TO_EMAIL,
+            "subject": getattr(settings, 'WEBMAILER_TEST_SUBJECT', 'UTF-8 DKIM test via webmailer'),
             "text_body": text_body,
             "html_body": html_body,
-            "unsubscribe_email": "contact@autoverkopen.email",
-            "unsubscribe_url": "https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/autoverkopen-email/?id=test",
-            "one_click_unsubscribe_url": "https://sendgrid.auto-tweedehands.com/mailing/unsubscribe/one-click/?id=test"
+            "unsubscribe_email": unsubscribe_email,
+            "unsubscribe_url": unsubscribe_url,
+            "one_click_unsubscribe_url": one_click_url,
         }
 
         headers = {
@@ -30,10 +53,27 @@ class Command(BaseCommand):
         }
 
         try:
-            response = requests.post(url, data=json.dumps(payload).encode("utf-8"), headers=headers)
-            if response.status_code == 200:
-                self.stdout.write(('Test email sent via HTTP: %s' % response.json()))
-            else:
-                self.stderr.write(('Failed with status %s: %s' % (response.status_code, response.text)))
+            response = requests.post(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                timeout=getattr(settings, 'WEBMAILER_TEST_TIMEOUT', 30),
+            )
         except Exception as e:
-            self.stderr.write(('Request error: %s' % e))
+            raise CommandError('Request error: %s' % e)
+
+        try:
+            response_data = response.json()
+        except ValueError:
+            raise CommandError(
+                'Non-JSON response (HTTP %s): %s' %
+                (response.status_code, response.text)
+            )
+
+        if response.status_code != 200 or response_data.get('status') != 'sent':
+            raise CommandError(
+                'Test email failed (HTTP %s): %s' %
+                (response.status_code, response_data)
+            )
+
+        self.stdout.write('Test email sent via HTTP: %s' % response_data)
