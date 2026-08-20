@@ -20,7 +20,7 @@ from webmailer.views import send_email_api
 from maillogger.views import email_log_api
 
 urlpatterns = [
-    url(r'^$', lambda request: HttpResponseRedirect('http://www.auto-tweedehands.com')),
+    url(r'^$', lambda request: HttpResponseRedirect('/admin/')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/send-email/$', send_email_api),
     url(r'^api/email-log/$', email_log_api),
