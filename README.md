@@ -54,6 +54,43 @@ This project is part of the broader `Email-marketing-platforms` initiative, wher
 POST /api/send-email/
 ```
 
+### Webinterface en rootredirect
+
+De root-URL `/` verwijst naar de externe publieke website die in de lokale
+Django-settings is geconfigureerd:
+
+```text
+/ -> WEBMAILER_PUBLIC_SITE_URL
+```
+
+Voorbeeld in de niet-gecommitte `config/settings.py` van de webmailerserver:
+
+```python
+WEBMAILER_PUBLIC_SITE_URL = "https://www.example.com/"
+```
+
+Hierdoor gaan zowel bezoekers van het webmailer-subdomein als bezoekers die de
+server via het IP-adres openen vanaf `/` naar de publieke website. De publieke
+website kan bijvoorbeeld door Firebase Hosting worden bediend. De echte URL
+staat alleen in de lokale settings en wordt niet hardcoded of in deze publieke
+README opgeslagen.
+
+De Django-admin blijft rechtstreeks bereikbaar voor beheerders die het pad
+kennen:
+
+```text
+/admin/
+```
+
+`ALLOWED_HOSTS` moet zowel het webmailer-subdomein als het gebruikte server-IP
+toestaan als beide HTTP Host-waarden door Django moeten worden geaccepteerd.
+Het niet publiceren van `/admin/` is geen toegangsbeveiliging; gebruik een
+sterk wachtwoord en beperk de admin waar mogelijk met firewall- of
+Apache-regels.
+
+De API-endpoints worden hierdoor niet beïnvloed. Bijvoorbeeld
+`POST /api/send-email/` blijft rechtstreeks beschikbaar.
+
 **Payload (JSON):**
 
 ```json
@@ -99,9 +136,12 @@ Deze public repo bevat geen `settings.py` met productiegegevens. Maak op elke se
 Minimale Django/webmailer configuratie:
 
 ```python
+import os
+
 SECRET_KEY = "change-me-local-secret"
 DEBUG = False
-ALLOWED_HOSTS = ["mailer.example.com"]
+ALLOWED_HOSTS = ["mailer.example.com", "192.0.2.10"]
+WEBMAILER_PUBLIC_SITE_URL = "https://www.example.com/"
 
 DATABASES = {
     "default": {
@@ -119,7 +159,16 @@ EMAIL_PORT = 25
 DEFAULT_FROM_EMAIL = "noreply@example.com"
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 WEBMAILER_CONTENT_TRANSFER_ENCODING = "quoted-printable"
+
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 ```
+
+`STATIC_URL` is het URL-prefix dat Django voor static bestanden gebruikt.
+`STATIC_ROOT` is de lokale directory waarin `collectstatic` de bestanden
+verzamelt. Apache moet met `Alias /static/` exact naar deze directory wijzen.
+Deze waarden horen in de lokale, niet-gecommitte `config/settings.py`; de
+README bewaart alleen het configuratievoorbeeld en geen actieve serverwaarde.
 
 `WEBMAILER_CONTENT_TRANSFER_ENCODING` controls MIME body encoding for text/plain and text/html parts before SMTP handoff.
 Recommended value is `"quoted-printable"` for UTF-8 mail because it keeps message bodies readable while avoiding unstable `8bit` transport bodies that can break DKIM body hash validation if a downstream server rewrites or wraps content.
@@ -129,7 +178,7 @@ Contact status synchronisatie naar een externe Contact database:
 
 ```python
 CONTACT_STATUS_UPDATE_ENABLED = True
-CONTACT_STATUS_UPDATE_URL = "https://sendgrid.auto-tweedehands.com/contact/api/email-status/"
+CONTACT_STATUS_UPDATE_URL = "https://contact.example.com/contact/api/email-status/"
 CONTACT_PROVIDER_UPDATE_KEY = "change-me-long-random-key"
 CONTACT_STATUS_UPDATE_TIMEOUT = 10
 ```
@@ -157,7 +206,7 @@ Settings:
 
 ```python
 CONTACT_STATUS_UPDATE_ENABLED = True
-CONTACT_STATUS_UPDATE_URL = "https://sendgrid.auto-tweedehands.com/contact/api/email-status/"
+CONTACT_STATUS_UPDATE_URL = "https://contact.example.com/contact/api/email-status/"
 CONTACT_PROVIDER_UPDATE_KEY = "change-me"
 CONTACT_STATUS_UPDATE_TIMEOUT = 10
 ```

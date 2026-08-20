@@ -13,6 +13,7 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
+from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.http import HttpResponseRedirect
@@ -20,7 +21,7 @@ from webmailer.views import send_email_api
 from maillogger.views import email_log_api
 
 urlpatterns = [
-    url(r'^$', lambda request: HttpResponseRedirect('/admin/')),
+    url(r'^$', lambda request: HttpResponseRedirect(settings.WEBMAILER_PUBLIC_SITE_URL)),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/send-email/$', send_email_api),
     url(r'^api/email-log/$', email_log_api),
