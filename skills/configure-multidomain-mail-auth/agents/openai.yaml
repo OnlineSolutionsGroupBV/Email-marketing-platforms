@@ -1,0 +1,4 @@
+interface:
+  display_name: "Configure Multi-domain Mail Auth"
+  short_description: "Configure generic Postfix and DKIM domain routing"
+  default_prompt: "Use $configure-multidomain-mail-auth to safely configure or troubleshoot multi-domain Postfix and OpenDKIM delivery."

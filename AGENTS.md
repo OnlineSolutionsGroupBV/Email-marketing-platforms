@@ -19,6 +19,18 @@ skills/operate-webmailer-delivery/SKILL.md
 
 Also read the documentation selected by that skill before taking action.
 
+For sender-dependent Postfix transports, multi-domain OpenDKIM
+`KeyTable`/`SigningTable` work, DKIM DNS publication, or invalid-signature
+diagnosis, also read and follow:
+
+```text
+skills/configure-multidomain-mail-auth/SKILL.md
+```
+
+Keep every example from that skill generic inside this public repository.
+Store production routing matrices, domains, IP addresses, key paths, and DNS
+values only in server-local configuration or private operational records.
+
 ## Compatibility and safety
 
 - Preserve Python 2.7 and Django 1.8 compatibility unless an explicit upgrade

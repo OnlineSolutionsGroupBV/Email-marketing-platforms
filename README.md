@@ -30,6 +30,7 @@ It allows client applications to send transactional or marketing emails via a cl
 - [Apache and mod_wsgi deployment](docs/APACHE_MOD_WSGI_DEPLOYMENT.md)
 - [Delivery testing and gradual warmup](docs/TESTING_AND_WARMUP.md)
 - [Agent workflow skill](skills/operate-webmailer-delivery/SKILL.md)
+- [Generic multi-domain Postfix and DKIM skill](skills/configure-multidomain-mail-auth/SKILL.md)
 - [Repository agent instructions](AGENTS.md)
 
 The skill is project-local and travels with this Git repository. After these
@@ -57,6 +58,12 @@ test -f skills/operate-webmailer-delivery/SKILL.md
 Do not overwrite either server's local `config/settings.py`. An agent working
 in this repository must read `AGENTS.md`; for deployment, testing, or warmup it
 must then follow `skills/operate-webmailer-delivery/SKILL.md`.
+
+For shared Postfix/OpenDKIM installations that route multiple From domains to
+separate source IPs and signing keys, use
+`skills/configure-multidomain-mail-auth/SKILL.md`. That skill intentionally
+uses placeholders and contains no deployment-specific domains, addresses, key
+values, or credentials.
 
 ## 📄 Webmailer – Self-Hosted HTTP-to-SMTP Email API
 
